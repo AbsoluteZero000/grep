@@ -32,7 +32,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// default exit code is 0 which means success
 }
 
 func matchLine(line []byte, pattern string) (bool, error) {
@@ -43,6 +42,8 @@ func matchLine(line []byte, pattern string) (bool, error) {
 
 	if pattern == "\\d" {
 		ok = bytes.ContainsAny(line, "1234567890")
+	} else if pattern == "\\w" {
+		ok = bytes.ContainsAny(line, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 	} else {
 		ok = bytes.ContainsAny(line, pattern)
 	}
