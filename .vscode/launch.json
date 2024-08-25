@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${fileDirname}",
-            "args": ["-E", "\\d apple"],
+            "args": ["-E", "[^bna]"],
             "console": "integratedTerminal"
         }
     ]

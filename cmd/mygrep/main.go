@@ -21,6 +21,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error: read input text: %v\n", err)
 		os.Exit(2)
 	}
+
 	ok, err := matchLine(string(line), pattern)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
@@ -40,8 +41,11 @@ func matchLine(line string, pattern string) (bool, error) {
 	for j := 0; j < len(line); j++ {
 		i := 0
 		for  j < len(line) && i < len(pattern) {
-			fmt.Println(string(pattern[i]), string(line[j]))
 			if pattern[i] == '\\' {
+				if pattern[i+1]== '\\' {
+					i += 1
+				}
+
 				if pattern[i+1] == 'd' {
 					if(!strings.Contains("1234567890", string(line[j]))) {
 						i = len(pattern) + 2
@@ -54,7 +58,10 @@ func matchLine(line string, pattern string) (bool, error) {
 						break
 					}
 					j++; i+=2
+				} else {
+					return false, fmt.Errorf("invalid pattern: %q", pattern)
 				}
+
 			} else if pattern[i] == '[' {
 				k := i
 				for k < len(pattern) && pattern[k] != ']' {
@@ -63,18 +70,20 @@ func matchLine(line string, pattern string) (bool, error) {
 				if k == len(pattern) {
 					return false , fmt.Errorf("invalid pattern: %q", pattern)
 				}
+
 				if pattern[i+1] == '^' {
-					if strings.Contains(pattern[j:k], string(line[j])) {
+
+					if strings.Contains(pattern[i+2:k], string(line[j])) {
 						i = len(pattern) + 2
 						break
 					}
 				} else {
-					if !strings.Contains(pattern[1:len(pattern)-1], string(line[j])) {
+					if !strings.Contains(pattern[i+1:k], string(line[j])) {
 						i = len(pattern) + 2
 						break
 					}
 				}
-				j = k + 1; i++
+				i = k + 1; j++
 			} else {
 				if pattern[i] != line[j] {
 					i = len(pattern) + 2
@@ -83,7 +92,6 @@ func matchLine(line string, pattern string) (bool, error) {
 				i++; j++
 			}
 		}
-
 		if i == len(pattern) {
 			return true, nil
 		}
