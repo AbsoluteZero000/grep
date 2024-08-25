@@ -115,7 +115,10 @@ func matchLine(line string, pattern string) (bool, error) {
                 if operator == '?' && count > 1 {
                     j -= count - 1
                 }
-            } else {
+            } else if pattern[i] == '.' {
+				j++
+				i++
+			}else {
                 if pattern[i] != line[j] {
                     break
                 }
