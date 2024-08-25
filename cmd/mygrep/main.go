@@ -38,7 +38,14 @@ func matchLine(line string, pattern string) (bool, error) {
 	if utf8.RuneCountInString(pattern) == 0 {
 		return false, fmt.Errorf("unsupported pattern: %q", pattern)
 	}
-	for j := 0; j < len(line); j++ {
+
+	length := len(line)
+	if pattern[0] == '^' {
+		length = 1
+		pattern = pattern[1:]
+	}
+
+	for j := 0; j < length; j++ {
 		i := 0
 		for  j < len(line) && i < len(pattern) {
 			if pattern[i] == '\\' {
