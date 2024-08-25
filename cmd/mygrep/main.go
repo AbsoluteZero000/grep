@@ -44,41 +44,39 @@ func charMatches(pattern string, lineChar byte) bool {
     }
 }
 func matchLine(line string, pattern string) (bool, error) {
-	if utf8.RuneCountInString(pattern) == 0 {
-		return false, fmt.Errorf("unsupported pattern: %q", pattern)
-	}
-
-	endAnchor := false
-	length := len(line)
-	if pattern[0] == '^' {
-		length = 1
-		pattern = pattern[1:]
-	}
-	if pattern[len(pattern)-1] == '$' {
-		pattern = pattern[:len(pattern)-1]
-		endAnchor = true
-	}
-
-    for j := 0; j < length; j++ {
-        i := 0
-        for j < len(line) && i < len(pattern) {
-            if pattern[i] == '\\' {
-                if i+1 < len(pattern) && pattern[i+1] == '\\' {
-                    i++
-                }
-                if i+1 < len(pattern) {
-                    if pattern[i+1] == 'd' || pattern[i+1] == 'w' {
-                        if !charMatches(pattern[i:i+2], line[j]) {
-                            i = len(pattern) + 2
-                            break
-                        }
-                        j++
-                        i += 2
-                    } else {
-                        return false, fmt.Errorf("invalid pattern: %q", pattern)
-                    }
-                }
-            } else if pattern[i] == '[' {
+		if utf8.RuneCountInString(pattern) == 0 {
+			return false, fmt.Errorf("unsupported pattern: %q", pattern)
+		}
+		endAnchor := false
+		length := len(line)
+		if pattern[0] == '^' {
+			length = 1
+			pattern = pattern[1:]
+		}
+		if pattern[len(pattern)-1] == '$' {
+			pattern = pattern[:len(pattern)-1]
+			endAnchor = true
+		}
+		for j := 0; j < length; j++ {
+			i := 0
+			for j < len(line) && i < len(pattern) {
+				if pattern[i] == '\\' {
+					if i+1 < len(pattern) && pattern[i+1] == '\\' {
+						i++
+					}
+					if i+1 < len(pattern) {
+						if pattern[i+1] == 'd' || pattern[i+1] == 'w' {
+							if !charMatches(pattern[i:i+2], line[j]) {
+								i = len(pattern) + 2
+								break
+							}
+							j++
+							i += 2
+						} else {
+							return false, fmt.Errorf("invalid pattern: %q", pattern)
+						}
+					}
+				} else if pattern[i] == '[' {
 				k := i
 				for k < len(pattern) && pattern[k] != ']' {
 					k++
@@ -101,24 +99,27 @@ func matchLine(line string, pattern string) (bool, error) {
 				}
 				i = k + 1
 				j++
-			}else if i+1 < len(pattern) && pattern[i+1] == '+' {
-                if !charMatches(string(pattern[i]), line[j]) {
+			}else if i+1 < len(pattern) && (pattern[i+1] == '+' || pattern[i+1] == '*') {
+                operator := pattern[i+1]
+                if operator == '+' && !charMatches(string(pattern[i]), line[j]) {
                     i = len(pattern) + 2
                     break
                 }
-                for j+1 < len(line) && charMatches(string(pattern[i]), line[j+1]) {
+                for j < len(line) && charMatches(string(pattern[i]), line[j]) {
                     j++
                 }
+                if operator == '*' {
+                    j--
+                }
                 i += 2
-                j++
             } else {
-				if pattern[i] != line[j] {
-					i = len(pattern) + 2
-					break
-				}
-				i++
-				j++
-			}
+                if pattern[i] != line[j] {
+                    i = len(pattern) + 2
+                    break
+                }
+                i++
+                j++
+            }
 		}
 		if i == len(pattern) {
 			if endAnchor {
