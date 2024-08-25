@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -21,8 +21,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error: read input text: %v\n", err)
 		os.Exit(2)
 	}
-
-	ok, err := matchLine(line, pattern)
+	ok, err := matchLine(string(line), pattern)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(2)
@@ -34,25 +33,61 @@ func main() {
 
 }
 
-func matchLine(line []byte, pattern string) (bool, error) {
+func matchLine(line string, pattern string) (bool, error) {
 	if utf8.RuneCountInString(pattern) == 0 {
 		return false, fmt.Errorf("unsupported pattern: %q", pattern)
 	}
-	var ok bool
-
-	if pattern == "\\d" {
-		ok = bytes.ContainsAny(line, "1234567890")
-	} else if pattern == "\\w" {
-		ok = bytes.ContainsAny(line, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-	} else if pattern[0] == '[' && pattern[len(pattern)-1] == ']' {
-		if pattern[1] == '^' {
-			ok = !bytes.ContainsAny(line, pattern[2:len(pattern)-1])
-		} else {
-			ok = bytes.ContainsAny(line, pattern[1:len(pattern)-1])
+	for j := 0; j < len(line); j++ {
+		i := 0
+		for  j < len(line) && i < len(pattern) {
+			fmt.Println(string(pattern[i]), string(line[j]))
+			if pattern[i] == '\\' {
+				if pattern[i+1] == 'd' {
+					if(!strings.Contains("1234567890", string(line[j]))) {
+						i = len(pattern) + 2
+						break
+					}
+					j++; i+=2
+				} else if pattern[i+1] == 'w' {
+					if !strings.Contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", string(line[j])) {
+						i = len(pattern) + 2
+						break
+					}
+					j++; i+=2
+				}
+			} else if pattern[i] == '[' {
+				k := i
+				for k < len(pattern) && pattern[k] != ']' {
+					k++
+				}
+				if k == len(pattern) {
+					return false , fmt.Errorf("invalid pattern: %q", pattern)
+				}
+				if pattern[i+1] == '^' {
+					if strings.Contains(pattern[j:k], string(line[j])) {
+						i = len(pattern) + 2
+						break
+					}
+				} else {
+					if !strings.Contains(pattern[1:len(pattern)-1], string(line[j])) {
+						i = len(pattern) + 2
+						break
+					}
+				}
+				j = k + 1; i++
+			} else {
+				if pattern[i] != line[j] {
+					i = len(pattern) + 2
+					break
+				}
+				i++; j++
+			}
 		}
-	} else {
-		ok = bytes.ContainsAny(line, pattern)
+
+		if i == len(pattern) {
+			return true, nil
+		}
 	}
 
-	return ok, nil
+	return false, nil
 }
