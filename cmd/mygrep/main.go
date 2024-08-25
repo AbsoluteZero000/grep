@@ -39,32 +39,38 @@ func matchLine(line string, pattern string) (bool, error) {
 		return false, fmt.Errorf("unsupported pattern: %q", pattern)
 	}
 
+	endAnchor := false
 	length := len(line)
 	if pattern[0] == '^' {
 		length = 1
 		pattern = pattern[1:]
 	}
-
+	if pattern[len(pattern)-1] == '$' {
+		pattern = pattern[:len(pattern)-1]
+		endAnchor = true
+	}
 	for j := 0; j < length; j++ {
 		i := 0
-		for  j < len(line) && i < len(pattern) {
+		for j < len(line) && i < len(pattern) {
 			if pattern[i] == '\\' {
-				if pattern[i+1]== '\\' {
+				if pattern[i+1] == '\\' {
 					i += 1
 				}
 
 				if pattern[i+1] == 'd' {
-					if(!strings.Contains("1234567890", string(line[j]))) {
+					if !strings.Contains("1234567890", string(line[j])) {
 						i = len(pattern) + 2
 						break
 					}
-					j++; i+=2
+					j++
+					i += 2
 				} else if pattern[i+1] == 'w' {
 					if !strings.Contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", string(line[j])) {
 						i = len(pattern) + 2
 						break
 					}
-					j++; i+=2
+					j++
+					i += 2
 				} else {
 					return false, fmt.Errorf("invalid pattern: %q", pattern)
 				}
@@ -75,7 +81,7 @@ func matchLine(line string, pattern string) (bool, error) {
 					k++
 				}
 				if k == len(pattern) {
-					return false , fmt.Errorf("invalid pattern: %q", pattern)
+					return false, fmt.Errorf("invalid pattern: %q", pattern)
 				}
 
 				if pattern[i+1] == '^' {
@@ -90,16 +96,24 @@ func matchLine(line string, pattern string) (bool, error) {
 						break
 					}
 				}
-				i = k + 1; j++
+				i = k + 1
+				j++
 			} else {
 				if pattern[i] != line[j] {
 					i = len(pattern) + 2
 					break
 				}
-				i++; j++
+				i++
+				j++
 			}
 		}
 		if i == len(pattern) {
+			if endAnchor {
+				if j == len(line) {
+					return true, nil
+				}
+				return false, nil
+			}
 			return true, nil
 		}
 	}
